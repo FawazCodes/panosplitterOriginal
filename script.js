@@ -21,11 +21,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingText = document.getElementById('loading-text');
     const downloadBtnText = document.querySelector('.btn-text');
     const downloadBtnLoader = document.querySelector('.btn-loader');
+    const navButtons = document.querySelectorAll('#background-modes .nav-btn');
+    const blurSlider = document.getElementById('blur-slider');
+    const colorSwatches = document.getElementById('color-swatches');
+    const colorPicker = document.getElementById('color-picker');
+    const gradientTypeSelect = document.getElementById('gradient-type');
+    const gradientAngleInput = document.getElementById('gradient-angle');
     
     // Variables to store image data
     let originalImage = null;
     let slicedImages = [];
     let fullViewImage = null;
+    let palette = [];
+    let backgroundSettings = {
+        mode: 'original',
+        blur: 20,
+        color: '#ffffff',
+        gradientType: 'linear',
+        gradientAngle: 0,
+        gradientColors: []
+    };
+    let lastSliceWidth = 0;
+    let lastSliceHeight = 0;
     
     // Standard Instagram 4:5 aspect ratio
     const aspectRatio = 4/5; // width:height ratio
@@ -60,6 +77,84 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = false;
         textElement.style.opacity = '1';
         loaderElement.style.display = 'none';
+    }
+
+    function updateBgOptionVisibility() {
+        document.querySelectorAll('.bg-option').forEach(opt => {
+            if (opt.id === `${backgroundSettings.mode}-options`) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+    }
+
+    function renderPalette(colors) {
+        colorSwatches.innerHTML = '';
+        colors.forEach(c => {
+            const sw = document.createElement('button');
+            sw.className = 'color-swatch';
+            sw.style.backgroundColor = c;
+            sw.dataset.color = c;
+            colorSwatches.appendChild(sw);
+        });
+    }
+
+    function extractPalette(img, count = 5) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        const pixels = [];
+        const step = 4 * 10;
+        for (let i = 0; i < data.length; i += step) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            if (a > 0) pixels.push([r, g, b]);
+        }
+        if (pixels.length === 0) return [];
+
+        const centroids = [];
+        for (let i = 0; i < count; i++) {
+            centroids.push(pixels[Math.floor(Math.random() * pixels.length)]);
+        }
+
+        for (let iter = 0; iter < 5; iter++) {
+            const clusters = Array.from({ length: count }, () => ({ sum: [0,0,0], count: 0 }));
+            pixels.forEach(p => {
+                let best = 0;
+                let bestDist = Infinity;
+                centroids.forEach((c, idx) => {
+                    const dist = (p[0]-c[0])**2 + (p[1]-c[1])**2 + (p[2]-c[2])**2;
+                    if (dist < bestDist) { bestDist = dist; best = idx; }
+                });
+                const cl = clusters[best];
+                cl.sum[0] += p[0];
+                cl.sum[1] += p[1];
+                cl.sum[2] += p[2];
+                cl.count++;
+            });
+            centroids.forEach((c, idx) => {
+                const cl = clusters[idx];
+                if (cl.count > 0) {
+                    c[0] = Math.round(cl.sum[0] / cl.count);
+                    c[1] = Math.round(cl.sum[1] / cl.count);
+                    c[2] = Math.round(cl.sum[2] / cl.count);
+                }
+            });
+        }
+
+        return centroids.map(c => `#${((1 << 24) + (c[0] << 16) + (c[1] << 8) + c[2]).toString(16).slice(1)}`);
+    }
+
+    function regenerateFullView() {
+        if (!originalImage || !fullViewImage) return;
+        createFullViewImage(lastSliceWidth, lastSliceHeight);
+        displayResults();
     }
     
     // Event Listeners for drag and drop
@@ -137,6 +232,46 @@ document.addEventListener('DOMContentLoaded', () => {
             updateImageDetails();
         }
     });
+
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            navButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            backgroundSettings.mode = btn.dataset.mode;
+            updateBgOptionVisibility();
+            regenerateFullView();
+        });
+    });
+
+    blurSlider.addEventListener('input', () => {
+        backgroundSettings.blur = Number(blurSlider.value);
+        regenerateFullView();
+    });
+
+    colorPicker.addEventListener('input', () => {
+        backgroundSettings.color = colorPicker.value;
+        regenerateFullView();
+    });
+
+    colorSwatches.addEventListener('click', (e) => {
+        if (e.target.classList.contains('color-swatch')) {
+            backgroundSettings.color = e.target.dataset.color;
+            colorPicker.value = backgroundSettings.color;
+            regenerateFullView();
+        }
+    });
+
+    gradientTypeSelect.addEventListener('change', () => {
+        backgroundSettings.gradientType = gradientTypeSelect.value;
+        regenerateFullView();
+    });
+
+    gradientAngleInput.addEventListener('input', () => {
+        backgroundSettings.gradientAngle = Number(gradientAngleInput.value);
+        regenerateFullView();
+    });
+
+    updateBgOptionVisibility();
     
     // Handle file upload
     function handleFile(file) {
@@ -169,16 +304,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     height: img.height,
                     src: e.target.result
                 };
-                
+
+                palette = extractPalette(img, 5);
+                renderPalette(palette);
+                if (palette.length) {
+                    backgroundSettings.color = palette[0];
+                    backgroundSettings.gradientColors = [palette[0], palette[1] || palette[0]];
+                    colorPicker.value = backgroundSettings.color;
+                }
+
                 // Update image details
                 updateImageDetails();
-                
+
                 // Show preview
                 previewImg.src = e.target.result;
-                
+
                 // Hide error if shown
                 errorMessage.style.display = 'none';
-                
+
                 // Show preview container
                 uploadArea.style.display = 'none';
                 previewContainer.style.display = 'block';
@@ -330,7 +473,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 height: sliceHeight
             });
         }
-        
+
+        lastSliceWidth = sliceWidth;
+        lastSliceHeight = sliceHeight;
+
         // Create the full panorama view on white background
         createFullViewImage(sliceWidth, sliceHeight);
         
@@ -338,58 +484,84 @@ document.addEventListener('DOMContentLoaded', () => {
         displayResults();
     }
     
-    // Create a full panorama view on white background with 4:5 aspect ratio
+    // Create a full panorama view with customizable background
     function createFullViewImage(sliceWidth, sliceHeight) {
         if (!originalImage) return;
-        
-        // Create a canvas with the same aspect ratio as the slices
+
         const fullCanvas = document.createElement('canvas');
         const fullCtx = fullCanvas.getContext('2d');
-        
-        // Use the same dimensions as the slices for consistency
+
         fullCanvas.width = sliceWidth;
         fullCanvas.height = sliceHeight;
-        
-        // Fill with white background
-        fullCtx.fillStyle = '#FFFFFF';
-        fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
-        
-        // Calculate the scale for the panorama to fit within the frame with margins
-        const margin = Math.round(sliceWidth * 0.08); // 8% margin
+
+        if (backgroundSettings.mode === 'blur') {
+            const scale = Math.max(sliceWidth / originalImage.width, sliceHeight / originalImage.height);
+            const w = originalImage.width * scale;
+            const h = originalImage.height * scale;
+            const bx = (sliceWidth - w) / 2;
+            const by = (sliceHeight - h) / 2;
+            fullCtx.filter = `blur(${backgroundSettings.blur}px)`;
+            fullCtx.drawImage(originalImage.element, 0, 0, originalImage.width, originalImage.height, bx, by, w, h);
+            fullCtx.filter = 'none';
+        } else if (backgroundSettings.mode === 'solid') {
+            fullCtx.fillStyle = backgroundSettings.color || '#FFFFFF';
+            fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+        } else if (backgroundSettings.mode === 'gradient') {
+            const colors = backgroundSettings.gradientColors.length >= 2 ? backgroundSettings.gradientColors : ['#000000', '#ffffff'];
+            let grad;
+            if (backgroundSettings.gradientType === 'radial') {
+                grad = fullCtx.createRadialGradient(
+                    sliceWidth / 2,
+                    sliceHeight / 2,
+                    0,
+                    sliceWidth / 2,
+                    sliceHeight / 2,
+                    Math.max(sliceWidth, sliceHeight) / 2
+                );
+            } else {
+                const angle = (backgroundSettings.gradientAngle || 0) * Math.PI / 180;
+                const x0 = sliceWidth / 2 + Math.cos(angle) * sliceWidth / 2;
+                const y0 = sliceHeight / 2 + Math.sin(angle) * sliceHeight / 2;
+                const x1 = sliceWidth / 2 - Math.cos(angle) * sliceWidth / 2;
+                const y1 = sliceHeight / 2 - Math.sin(angle) * sliceHeight / 2;
+                grad = fullCtx.createLinearGradient(x0, y0, x1, y1);
+            }
+            grad.addColorStop(0, colors[0]);
+            grad.addColorStop(1, colors[1]);
+            fullCtx.fillStyle = grad;
+            fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+        } else {
+            fullCtx.fillStyle = '#FFFFFF';
+            fullCtx.fillRect(0, 0, sliceWidth, sliceHeight);
+        }
+
+        const margin = Math.round(sliceWidth * 0.08);
         const availableWidth = sliceWidth - (margin * 2);
         const availableHeight = sliceHeight - (margin * 2);
-        
-        // Determine which dimension constrains the scaling
         const originalAspectRatio = originalImage.width / originalImage.height;
         let scaledPanoWidth, scaledPanoHeight;
-        
+
         if (originalAspectRatio > availableWidth / availableHeight) {
-            // Width is the constraining factor
             scaledPanoWidth = availableWidth;
             scaledPanoHeight = scaledPanoWidth / originalAspectRatio;
         } else {
-            // Height is the constraining factor
             scaledPanoHeight = availableHeight;
             scaledPanoWidth = scaledPanoHeight * originalAspectRatio;
         }
-        
-        // Calculate position to center the image
+
         const x = Math.round((sliceWidth - scaledPanoWidth) / 2);
         const y = Math.round((sliceHeight - scaledPanoHeight) / 2);
-        
-        // Draw the scaled panorama centered on the white canvas
+
         fullCtx.drawImage(
             originalImage.element,
             0, 0, originalImage.width, originalImage.height,
             x, y, scaledPanoWidth, scaledPanoHeight
         );
-        
-        // Add a subtle border
+
         fullCtx.strokeStyle = '#EEEEEE';
         fullCtx.lineWidth = 1;
         fullCtx.strokeRect(x - 1, y - 1, scaledPanoWidth + 2, scaledPanoHeight + 2);
-        
-        // Convert to data URL
+
         fullViewImage = {
             dataURL: fullCanvas.toDataURL('image/jpeg', 0.95),
             width: sliceWidth,
@@ -471,6 +643,23 @@ document.addEventListener('DOMContentLoaded', () => {
         originalImage = null;
         slicedImages = [];
         fullViewImage = null;
+        palette = [];
+        lastSliceWidth = 0;
+        lastSliceHeight = 0;
+        backgroundSettings = {
+            mode: 'original',
+            blur: 20,
+            color: '#ffffff',
+            gradientType: 'linear',
+            gradientAngle: 0,
+            gradientColors: []
+        };
+        navButtons.forEach(btn => btn.classList.remove('active'));
+        if (navButtons.length) {
+            navButtons[0].classList.add('active');
+        }
+        colorSwatches.innerHTML = '';
+        updateBgOptionVisibility();
         
         // Clear preview
         previewImg.src = '';
