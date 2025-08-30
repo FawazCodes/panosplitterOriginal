@@ -856,3 +856,68 @@ footer {
     width: 100%;
     max-height: 500px;
 }
+
+/* Watermark settings */
+.watermark-maker {
+    margin-top: 40px;
+}
+
+.watermark-maker details {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.watermark-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.watermark-settings {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.watermark-settings .setting label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.wm-option {
+    display: none;
+    margin-top: 10px;
+}
+
+.wm-option.active {
+    display: block;
+}
+
+.position-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.pos-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.pos-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--white);
+}

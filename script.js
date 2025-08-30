@@ -38,6 +38,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatButtons = document.querySelectorAll('#video-format .fmt-btn');
     const generateVideoBtn = document.getElementById('generate-video');
     const videoResult = document.getElementById('video-result');
+    const watermarkType = document.getElementById('watermark-type');
+    const wmTextInput = document.getElementById('wm-text');
+    const wmFontSize = document.getElementById('wm-font-size');
+    const wmFontWeight = document.getElementById('wm-font-weight');
+    const wmColor = document.getElementById('wm-color');
+    const wmStrokeColor = document.getElementById('wm-stroke-color');
+    const wmStrokeWidth = document.getElementById('wm-stroke-width');
+    const wmImageInput = document.getElementById('wm-image');
+    const wmOpacity = document.getElementById('wm-opacity');
+    const wmOpacityValue = document.getElementById('wm-opacity-value');
+    const wmPositionButtons = document.querySelectorAll('#wm-position-grid .pos-btn');
+    const wmOffsetX = document.getElementById('wm-offset-x');
+    const wmOffsetY = document.getElementById('wm-offset-y');
+    const textWatermarkOptions = document.getElementById('text-watermark-options');
+    const imageWatermarkOptions = document.getElementById('image-watermark-options');
     
     // Variables to store image data
     let originalImage = null;
@@ -56,6 +71,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastSliceHeight = 0;
     let panDirection = 'ltr';
     let outputFormat = 'mp4';
+    let watermarkSettings = {
+        type: 'none',
+        text: '',
+        fontSize: 24,
+        fontWeight: 'normal',
+        color: '#ffffff',
+        strokeColor: '#000000',
+        strokeWidth: 0,
+        image: null,
+        opacity: 1,
+        position: 'bottom-right',
+        offsetX: 0,
+        offsetY: 0
+    };
     
     // Standard Instagram 4:5 aspect ratio
     const aspectRatio = 4/5; // width:height ratio
@@ -90,6 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = false;
         textElement.style.opacity = '1';
         loaderElement.style.display = 'none';
+    }
+
+    function debounce(fn, delay = 16) {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn(...args), delay);
+        };
     }
 
     function updateBgOptionVisibility() {
@@ -164,6 +201,106 @@ document.addEventListener('DOMContentLoaded', () => {
         return centroids.map(c => `#${((1 << 24) + (c[0] << 16) + (c[1] << 8) + c[2]).toString(16).slice(1)}`);
     }
 
+    function drawWatermark(ctx, width, height) {
+        if (watermarkSettings.type === 'text' && watermarkSettings.text) {
+            ctx.save();
+            ctx.globalAlpha = watermarkSettings.opacity;
+            ctx.font = `${watermarkSettings.fontWeight} ${watermarkSettings.fontSize}px Montserrat, sans-serif`;
+            ctx.textBaseline = 'top';
+            ctx.textAlign = 'left';
+            const metrics = ctx.measureText(watermarkSettings.text);
+            const wmWidth = metrics.width;
+            const wmHeight = watermarkSettings.fontSize;
+            const { x, y } = computeWatermarkPosition(wmWidth, wmHeight, width, height);
+            if (watermarkSettings.strokeWidth > 0) {
+                ctx.lineWidth = watermarkSettings.strokeWidth;
+                ctx.strokeStyle = watermarkSettings.strokeColor;
+                ctx.strokeText(watermarkSettings.text, x, y);
+            }
+            ctx.fillStyle = watermarkSettings.color;
+            ctx.fillText(watermarkSettings.text, x, y);
+            ctx.restore();
+        } else if (watermarkSettings.type === 'image' && watermarkSettings.image) {
+            ctx.save();
+            ctx.globalAlpha = watermarkSettings.opacity;
+            const wmWidth = watermarkSettings.image.width;
+            const wmHeight = watermarkSettings.image.height;
+            const { x, y } = computeWatermarkPosition(wmWidth, wmHeight, width, height);
+            ctx.drawImage(watermarkSettings.image, x, y, wmWidth, wmHeight);
+            ctx.restore();
+        }
+    }
+
+    function computeWatermarkPosition(wmWidth, wmHeight, canvasWidth, canvasHeight) {
+        let x = 0, y = 0;
+        switch (watermarkSettings.position) {
+            case 'top-left':
+                break;
+            case 'top-center':
+                x = (canvasWidth - wmWidth) / 2;
+                break;
+            case 'top-right':
+                x = canvasWidth - wmWidth;
+                break;
+            case 'middle-left':
+                y = (canvasHeight - wmHeight) / 2;
+                break;
+            case 'center':
+                x = (canvasWidth - wmWidth) / 2;
+                y = (canvasHeight - wmHeight) / 2;
+                break;
+            case 'middle-right':
+                x = canvasWidth - wmWidth;
+                y = (canvasHeight - wmHeight) / 2;
+                break;
+            case 'bottom-left':
+                y = canvasHeight - wmHeight;
+                break;
+            case 'bottom-center':
+                x = (canvasWidth - wmWidth) / 2;
+                y = canvasHeight - wmHeight;
+                break;
+            case 'bottom-right':
+                x = canvasWidth - wmWidth;
+                y = canvasHeight - wmHeight;
+                break;
+        }
+        x += watermarkSettings.offsetX;
+        y += watermarkSettings.offsetY;
+        return { x, y };
+    }
+
+    async function applyWatermarkToSlices() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        for (const slice of slicedImages) {
+            const img = await loadImage(slice.baseDataURL);
+            canvas.width = slice.width;
+            canvas.height = slice.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, slice.width, slice.height);
+            drawWatermark(ctx, slice.width, slice.height);
+            slice.dataURL = canvas.toDataURL('image/jpeg', 0.95);
+        }
+    }
+
+    function loadImage(src) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.src = src;
+        });
+    }
+
+    async function updateWatermark() {
+        if (!originalImage || slicedImages.length === 0) return;
+        createFullViewImage(lastSliceWidth, lastSliceHeight);
+        await applyWatermarkToSlices();
+        displayResults();
+    }
+
+    const debouncedUpdateWatermark = debounce(updateWatermark, 16);
+
     function regenerateFullView() {
         if (!originalImage || !fullViewImage) return;
         createFullViewImage(lastSliceWidth, lastSliceHeight);
@@ -203,14 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Process button
-    processBtn.addEventListener('click', () => {
+    processBtn.addEventListener('click', async () => {
         showLoading('Generating slices...');
-        
-        // Use setTimeout to allow the loading overlay to appear before processing
-        setTimeout(() => {
-            processImage();
-            hideLoading();
-        }, 50);
+        await Promise.resolve().then(processImage);
+        hideLoading();
     });
     
     // Reset button
@@ -285,6 +418,83 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updateBgOptionVisibility();
+
+    // Watermark control listeners
+    watermarkType.addEventListener('change', () => {
+        watermarkSettings.type = watermarkType.value;
+        textWatermarkOptions.classList.toggle('active', watermarkType.value === 'text');
+        imageWatermarkOptions.classList.toggle('active', watermarkType.value === 'image');
+        debouncedUpdateWatermark();
+    });
+
+    wmTextInput.addEventListener('input', () => {
+        watermarkSettings.text = wmTextInput.value;
+        debouncedUpdateWatermark();
+    });
+
+    wmFontSize.addEventListener('input', () => {
+        watermarkSettings.fontSize = parseInt(wmFontSize.value, 10) || 0;
+        debouncedUpdateWatermark();
+    });
+
+    wmFontWeight.addEventListener('change', () => {
+        watermarkSettings.fontWeight = wmFontWeight.value;
+        debouncedUpdateWatermark();
+    });
+
+    wmColor.addEventListener('input', () => {
+        watermarkSettings.color = wmColor.value;
+        debouncedUpdateWatermark();
+    });
+
+    wmStrokeColor.addEventListener('input', () => {
+        watermarkSettings.strokeColor = wmStrokeColor.value;
+        debouncedUpdateWatermark();
+    });
+
+    wmStrokeWidth.addEventListener('input', () => {
+        watermarkSettings.strokeWidth = parseInt(wmStrokeWidth.value, 10) || 0;
+        debouncedUpdateWatermark();
+    });
+
+    wmImageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                if (!/png$/i.test(file.name)) console.warn('Tip: PNG preserves transparency best for watermarks.');
+                watermarkSettings.image = img;
+                updateWatermark();
+            };
+            img.src = url;
+        }
+    });
+
+    wmOpacity.addEventListener('input', () => {
+        watermarkSettings.opacity = wmOpacity.value / 100;
+        wmOpacityValue.textContent = `${wmOpacity.value}%`;
+        debouncedUpdateWatermark();
+    });
+
+    wmPositionButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            wmPositionButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            watermarkSettings.position = btn.dataset.pos;
+            debouncedUpdateWatermark();
+        });
+    });
+
+    wmOffsetX.addEventListener('input', () => {
+        watermarkSettings.offsetX = parseInt(wmOffsetX.value, 10) || 0;
+        debouncedUpdateWatermark();
+    });
+
+    wmOffsetY.addEventListener('input', () => {
+        watermarkSettings.offsetY = parseInt(wmOffsetY.value, 10) || 0;
+        debouncedUpdateWatermark();
+    });
 
     // Video control listeners
     if (videoDuration) {
@@ -480,7 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Process image into slices
-    function processImage() {
+    async function processImage() {
         if (!originalImage) return;
         
         const isHighResMode = highResToggle.checked;
@@ -502,7 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.drawImage(originalImage.element, 0, 0, scaledWidth, scaledHeight);
         
         slicedImages = [];
-        
+
         // Create each slice
         for (let i = 0; i < sliceCount; i++) {
             const sliceCanvas = document.createElement('canvas');
@@ -519,10 +729,11 @@ document.addEventListener('DOMContentLoaded', () => {
             );
             
             // Convert to data URL
-            const dataURL = sliceCanvas.toDataURL('image/jpeg', 0.95);
-            
+            const baseDataURL = sliceCanvas.toDataURL('image/jpeg', 0.95);
+
             slicedImages.push({
-                dataURL,
+                baseDataURL,
+                dataURL: baseDataURL, // temporary, will be overwritten by applyWatermarkToSlices
                 number: i + 1,
                 width: sliceWidth,
                 height: sliceHeight
@@ -534,7 +745,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Create the full panorama view on white background
         createFullViewImage(sliceWidth, sliceHeight);
-        
+
+        await applyWatermarkToSlices();
+
         // Show results
         displayResults();
     }
@@ -616,6 +829,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fullCtx.strokeStyle = '#EEEEEE';
         fullCtx.lineWidth = 1;
         fullCtx.strokeRect(x - 1, y - 1, scaledPanoWidth + 2, scaledPanoHeight + 2);
+
+        drawWatermark(fullCtx, sliceWidth, sliceHeight);
 
         fullViewImage = {
             dataURL: fullCanvas.toDataURL('image/jpeg', 0.95),
@@ -810,6 +1025,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const x = computePanPosition(t, panDirection, maxOffset, easing);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(originalImage.element || originalImage, x, 0, scaledWidth, canvas.height);
+            drawWatermark(ctx, canvas.width, canvas.height);
             frame++;
             if (frame < totalFrames) {
                 setTimeout(drawFrame, 1000 / fps);
