@@ -124,6 +124,59 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Pan Video Maker -->
+                <div class="video-maker" id="video-maker">
+                    <details>
+                        <summary class="video-summary">
+                            <img src="images/camera.svg" alt="" width="20" height="20">
+                            <span>Video</span>
+                        </summary>
+                        <div class="video-settings">
+                            <div class="setting">
+                                <label for="video-duration">Duration <span id="duration-value">15s</span></label>
+                                <input type="range" id="video-duration" min="5" max="180" value="15">
+                            </div>
+                            <div class="setting">
+                                <label for="video-fps">FPS <span id="fps-value">30</span></label>
+                                <input type="range" id="video-fps" min="30" max="120" step="30" value="30">
+                            </div>
+                            <div class="setting">
+                                <label for="video-bitrate">Bitrate <span id="bitrate-value">25</span> Mbps</label>
+                                <input type="range" id="video-bitrate" min="25" max="100" step="5" value="25">
+                            </div>
+                            <div class="setting">
+                                <label for="video-easing">Animation Easing</label>
+                                <select id="video-easing">
+                                    <option value="linear">linear</option>
+                                    <option value="ease-in-out">ease-in-out</option>
+                                    <option value="smooth">smooth</option>
+                                    <option value="ease-out">ease-out</option>
+                                </select>
+                            </div>
+                            <div class="setting">
+                                <label>Pan Direction</label>
+                                <div id="pan-direction" class="pan-grid">
+                                    <button type="button" class="dir-btn active" data-dir="ltr">L to R</button>
+                                    <button type="button" class="dir-btn" data-dir="rtl">R to L</button>
+                                    <button type="button" class="dir-btn" data-dir="lrl">L-R-L</button>
+                                    <button type="button" class="dir-btn" data-dir="rlr">R-L-R</button>
+                                </div>
+                            </div>
+                            <div class="setting">
+                                <label>Format</label>
+                                <div id="video-format" class="format-select">
+                                    <button type="button" class="fmt-btn active" data-format="mp4">MP4</button>
+                                    <button type="button" class="fmt-btn" data-format="webm">WebM</button>
+                                </div>
+                            </div>
+                            <div class="actions">
+                                <button id="generate-video" class="primary-btn">Generate Video</button>
+                            </div>
+                            <div id="video-result" class="video-result"></div>
+                        </div>
+                    </details>
+                </div>
             </section>
         </main>
     </div>

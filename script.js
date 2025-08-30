@@ -27,6 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const colorPicker = document.getElementById('color-picker');
     const gradientTypeSelect = document.getElementById('gradient-type');
     const gradientAngleInput = document.getElementById('gradient-angle');
+    const videoDuration = document.getElementById('video-duration');
+    const durationValue = document.getElementById('duration-value');
+    const videoFps = document.getElementById('video-fps');
+    const fpsValue = document.getElementById('fps-value');
+    const videoBitrate = document.getElementById('video-bitrate');
+    const bitrateValue = document.getElementById('bitrate-value');
+    const easingSelect = document.getElementById('video-easing');
+    const directionButtons = document.querySelectorAll('#pan-direction .dir-btn');
+    const formatButtons = document.querySelectorAll('#video-format .fmt-btn');
+    const generateVideoBtn = document.getElementById('generate-video');
+    const videoResult = document.getElementById('video-result');
     
     // Variables to store image data
     let originalImage = null;
@@ -43,6 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let lastSliceWidth = 0;
     let lastSliceHeight = 0;
+    let panDirection = 'ltr';
+    let outputFormat = 'mp4';
     
     // Standard Instagram 4:5 aspect ratio
     const aspectRatio = 4/5; // width:height ratio
@@ -272,7 +285,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updateBgOptionVisibility();
-    
+
+    // Video control listeners
+    if (videoDuration) {
+        durationValue.textContent = `${videoDuration.value}s`;
+        videoDuration.addEventListener('input', () => {
+            durationValue.textContent = `${videoDuration.value}s`;
+        });
+    }
+
+    if (videoFps) {
+        fpsValue.textContent = videoFps.value;
+        videoFps.addEventListener('input', () => {
+            fpsValue.textContent = videoFps.value;
+        });
+    }
+
+    if (videoBitrate) {
+        bitrateValue.textContent = videoBitrate.value;
+        videoBitrate.addEventListener('input', () => {
+            bitrateValue.textContent = videoBitrate.value;
+        });
+    }
+
+    directionButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            directionButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            panDirection = btn.dataset.dir;
+        });
+    });
+
+    formatButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            formatButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            outputFormat = btn.dataset.format;
+        });
+    });
+
+    if (generateVideoBtn) {
+        generateVideoBtn.addEventListener('click', generatePanVideo);
+    }
+
     // Handle file upload
     function handleFile(file) {
         // Check if file is image
@@ -664,7 +719,108 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear preview
         previewImg.src = '';
     }
-    
+
+    function getEasingFunction(type) {
+        const easings = {
+            'linear': t => t,
+            'ease-in-out': t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+            'smooth': t => t * t * (3 - 2 * t),
+            'ease-out': t => 1 - Math.pow(1 - t, 2),
+        };
+        return easings[type] || easings['linear'];
+    }
+
+    function computePanPosition(t, dir, maxOffset, easing) {
+        if (maxOffset <= 0) return 0;
+        switch (dir) {
+            case 'ltr':
+                return -maxOffset * easing(t);
+            case 'rtl':
+                return -maxOffset * (1 - easing(t));
+            case 'lrl':
+                if (t < 0.5) {
+                    return -maxOffset * easing(t * 2);
+                } else {
+                    return -maxOffset * (1 - easing((t - 0.5) * 2));
+                }
+            case 'rlr':
+                if (t < 0.5) {
+                    return -maxOffset * (1 - easing(t * 2));
+                } else {
+                    return -maxOffset * easing((t - 0.5) * 2);
+                }
+            default:
+                return 0;
+        }
+    }
+
+    async function generatePanVideo() {
+        if (!originalImage) return;
+
+        const duration = Number(videoDuration.value);
+        const fps = Number(videoFps.value);
+        const bitrate = Number(videoBitrate.value) * 1000000;
+        const easing = getEasingFunction(easingSelect.value);
+        const format = outputFormat;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = standardWidth;
+        canvas.height = standardHeight;
+
+        const stream = canvas.captureStream(fps);
+        const mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm';
+        let recorder;
+        try {
+            recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate });
+        } catch (e) {
+            alert('Video format not supported in this browser.');
+            return;
+        }
+
+        const chunks = [];
+        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            videoResult.innerHTML = '';
+            const video = document.createElement('video');
+            video.controls = true;
+            video.src = url;
+            videoResult.appendChild(video);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `pan_video.${format}`;
+            link.textContent = 'Download Video';
+            link.className = 'secondary-btn';
+            videoResult.appendChild(link);
+        };
+
+        const scale = canvas.height / originalImage.height;
+        const scaledWidth = originalImage.width * scale;
+        const maxOffset = scaledWidth - canvas.width;
+
+        let frame = 0;
+        const totalFrames = Math.round(duration * fps);
+
+        recorder.start();
+
+        function drawFrame() {
+            const t = frame / (totalFrames - 1);
+            const x = computePanPosition(t, panDirection, maxOffset, easing);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(originalImage.element || originalImage, x, 0, scaledWidth, canvas.height);
+            frame++;
+            if (frame < totalFrames) {
+                setTimeout(drawFrame, 1000 / fps);
+            } else {
+                recorder.stop();
+            }
+        }
+
+        drawFrame();
+    }
+
     // Download slices as zip file
     async function downloadZip() {
         if (slicedImages.length === 0) return;
