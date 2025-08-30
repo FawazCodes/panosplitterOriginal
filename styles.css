@@ -1,14 +1,15 @@
 /* Base Styles */
 :root {
-    --primary-color: #4361ee;
+    --primary-color: #5b6ef5;
     --secondary-color: #3f37c9;
     --accent-color: #4895ef;
     --error-color: #e63946;
-    --text-color: #333;
-    --text-light: #666;
-    --bg-color: #f8f9fa;
+    --text-color: #f8fafc;
+    --text-light: #94a3b8;
+    --bg-color: #0f172a;
+    --surface: #1e293b;
     --white: #ffffff;
-    --border-color: #e0e0e0;
+    --border-color: #334155;
     --border-radius: 12px;
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -64,16 +65,94 @@
 
 body {
     font-family: 'Montserrat', sans-serif;
-    background-color: var(--bg-color);
+    background: radial-gradient(circle at top left, #1e1f3b, #0f172a);
     color: var(--text-color);
     line-height: 1.6;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    position: relative;
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px 20px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.brand {
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.nav-title {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.nav-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.nav-btn,
+.nav-item {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.85rem;
+}
+
+.nav-btn:hover,
+.nav-item:hover {
+    background: var(--surface);
+    color: var(--text-color);
+}
+
+.nav-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px 30px;
+}
+
+.topbar-btn {
+    padding: 8px 16px;
+}
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 40px 40px 40px;
 }
 
 header {
@@ -127,7 +206,7 @@ h3 {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: rgba(15, 23, 42, 0.9);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -146,7 +225,7 @@ h3 {
     text-align: center;
     padding: 30px;
     border-radius: var(--border-radius);
-    background-color: var(--white);
+    background-color: var(--surface);
     box-shadow: var(--shadow-md);
 }
 
@@ -219,7 +298,7 @@ h3 {
 
 /* Upload Area */
 .upload-area {
-    background-color: var(--white);
+    background-color: var(--surface);
     border: 2px dashed var(--border-color);
     border-radius: var(--border-radius);
     padding: 40px;
@@ -235,7 +314,7 @@ h3 {
 
 .upload-area.drag-over {
     border-color: var(--accent-color);
-    background-color: rgba(67, 97, 238, 0.05);
+    background-color: rgba(91, 110, 245, 0.1);
 }
 
 .upload-inner {
@@ -303,7 +382,7 @@ h3 {
 
 .image-preview {
     position: relative;
-    background-color: var(--white);
+    background-color: var(--surface);
     border-radius: var(--border-radius);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
@@ -322,7 +401,7 @@ h3 {
 }
 
 .info-card {
-    background-color: var(--white);
+    background-color: var(--surface);
     border-radius: var(--border-radius);
     padding: 20px;
     box-shadow: var(--shadow-sm);
@@ -335,7 +414,7 @@ h3 {
 
 /* Options Section */
 .options {
-    background-color: var(--white);
+    background-color: var(--surface);
     border-radius: var(--border-radius);
     padding: 20px;
     box-shadow: var(--shadow-sm);
@@ -426,7 +505,7 @@ button {
 }
 
 .secondary-btn {
-    background-color: var(--white);
+    background-color: var(--surface);
     border: 1px solid var(--border-color);
     color: var(--text-color);
 }
@@ -455,7 +534,7 @@ button {
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
     aspect-ratio: 4/5;
-    background-color: var(--white);
+    background-color: var(--surface);
 }
 
 .slice-item:hover {
@@ -473,8 +552,8 @@ button {
     position: absolute;
     top: 10px;
     left: 10px;
-    background-color: rgba(67, 97, 238, 0.8);
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--text-color);
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
