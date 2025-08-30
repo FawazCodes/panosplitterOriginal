@@ -12,111 +12,101 @@
     <script defer src="https://umami.dev.futc.de/script.js" data-website-id="2aa2e0d0-aa61-4e38-986a-77eb590f7ae5"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo-container">
-                <img src="images/logo.svg" alt="FUTC Bird Logo" width="100" height="100" class="logo">
-            </div>
-            <h1>FUTC's Instagram Panorama Slicer</h1>
-            <p>Split your panorama images into Instagram-friendly carousel posts (4:5 aspect ratio)</p>
-            <p>Your photos never leave your computer, all processing is done locally</p>
-        </header>
-
-        <!-- Loading overlay -->
-        <div id="loading-overlay" class="loading-overlay">
-            <div class="loading-content">
-                <div class="spinner"></div>
-                <p id="loading-text">Processing your image...</p>
-            </div>
-        </div>
-
-        <div id="error-message" class="error-message">
-            <div class="error-content">
-                <img src="images/error-icon.svg" alt="Error" width="24" height="24">
-                <p>Please upload a panorama image with a horizontal aspect ratio (width > height).</p>
-                <button id="dismiss-error" class="secondary-btn">Dismiss</button>
-            </div>
-        </div>
-
-        <div class="upload-area" id="upload-area">
-            <div class="upload-inner">
-                <img src="images/upload-icon.svg" alt="Upload" width="48" height="48">
-                <h3>Drop your panorama image here</h3>
-                <p>or</p>
-                <label for="file-input" class="file-input-label">Select File</label>
-                <input type="file" id="file-input" accept="image/*" hidden>
-                <p class="support-text">Supports: JPG, PNG, WEBP</p>
-            </div>
-        </div>
-
-        <div class="preview-container" id="preview-container">
-            <h2>Preview</h2>
-            <div class="preview-wrapper">
-                <div class="image-preview">
-                    <img id="preview-img" src="" alt="Image preview">
+    <div class="app">
+        <aside class="sidebar">
+            <h1 class="brand">inSplitter</h1>
+            <nav class="nav">
+                <div class="nav-group">
+                    <p class="nav-title">Background</p>
+                    <div class="nav-buttons">
+                        <button class="nav-btn active">Original</button>
+                        <button class="nav-btn">Blur</button>
+                        <button class="nav-btn">Solid</button>
+                        <button class="nav-btn">Gradient</button>
+                    </div>
                 </div>
-                <div class="preview-info">
-                    <div class="info-card">
-                        <h3>Image Details</h3>
-                        <div id="image-details">
-                            <p>Original Size: <span id="original-size"></span></p>
-                            <p>Scaled Size: <span id="scaled-size"></span></p>
-                            <p>Number of Slices: <span id="slice-count"></span></p>
-                            <p>Slice Resolution: <span id="slice-resolution"></span></p>
+                <button class="nav-item">Watermark</button>
+                <button class="nav-item">Video</button>
+                <button class="nav-item">Export</button>
+            </nav>
+        </aside>
+        <main class="main">
+            <header class="topbar">
+                <button id="reset-btn" class="secondary-btn topbar-btn">New Image</button>
+            </header>
+            <section class="content">
+                <!-- Loading overlay -->
+                <div id="loading-overlay" class="loading-overlay">
+                    <div class="loading-content">
+                        <div class="spinner"></div>
+                        <p id="loading-text">Processing your image...</p>
+                    </div>
+                </div>
+
+                <div id="error-message" class="error-message">
+                    <div class="error-content">
+                        <img src="images/error-icon.svg" alt="Error" width="24" height="24">
+                        <p>Please upload a panorama image with a horizontal aspect ratio (width > height).</p>
+                        <button id="dismiss-error" class="secondary-btn">Dismiss</button>
+                    </div>
+                </div>
+
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-inner">
+                        <img src="images/upload-icon.svg" alt="Upload" width="48" height="48">
+                        <h3>Drop your panorama image here</h3>
+                        <p>or</p>
+                        <label for="file-input" class="file-input-label">Select File</label>
+                        <input type="file" id="file-input" accept="image/*" hidden>
+                        <p class="support-text">Supports: JPG, PNG, WEBP</p>
+                    </div>
+                </div>
+
+                <div class="preview-container" id="preview-container">
+                    <h2>Preview</h2>
+                    <div class="preview-wrapper">
+                        <div class="image-preview">
+                            <img id="preview-img" src="" alt="Image preview">
+                        </div>
+                        <div class="preview-info">
+                            <div class="info-card">
+                                <h3>Image Details</h3>
+                                <div id="image-details">
+                                    <p>Original Size: <span id="original-size"></span></p>
+                                    <p>Scaled Size: <span id="scaled-size"></span></p>
+                                    <p>Number of Slices: <span id="slice-count"></span></p>
+                                    <p>Slice Resolution: <span id="slice-resolution"></span></p>
+                                </div>
+                            </div>
+                            <div class="options">
+                                <div class="toggle-container">
+                                    <label class="toggle">
+                                        <span class="toggle-label">High Resolution Mode</span>
+                                        <input type="checkbox" id="high-res-toggle" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <p class="toggle-description">Uses maximum possible resolution from your image</p>
+                                </div>
+                            </div>
+                            <div class="actions">
+                                <button id="process-btn" class="primary-btn">Generate Slices</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="options">
-                        <div class="toggle-container">
-                            <label class="toggle">
-                                <span class="toggle-label">High Resolution Mode</span>
-                                <input type="checkbox" id="high-res-toggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <p class="toggle-description">Uses maximum possible resolution from your image</p>
-                        </div>
-                    </div>
-                    <div class="actions">
-                        <button id="process-btn" class="primary-btn">Generate Slices</button>
-                        <button id="reset-btn" class="secondary-btn">Reset</button>
+                </div>
+
+                <div class="result-container" id="result-container">
+                    <h2>Your Results</h2>
+                    <div class="slices-preview" id="slices-preview"></div>
+                    <div class="download-section">
+                        <button id="download-btn" class="primary-btn">
+                            <span class="btn-text">Download All Slices as ZIP</span>
+                            <span class="btn-loader"></span>
+                        </button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="result-container" id="result-container">
-            <h2>Sliced Images</h2>
-            <div class="slices-preview" id="slices-preview"></div>
-            <div class="download-section">
-                <button id="download-btn" class="primary-btn">
-                    <span class="btn-text">Download All Slices as ZIP</span>
-                    <span class="btn-loader"></span>
-                </button>
-            </div>
-        </div>
-
-        <div class="analogvibes-card">
-            <div class="analogvibes-image">
-                <img src="images/presets.jpg" alt="Lightroom Presets Preview">
-            </div>
-            <div class="analogvibes-content">
-                <h3>Analog Vibes Vol. 2 Lightroom Presets</h3>
-                <p>If you like this free web tool I made, please consider checking out my Lightroom Presets. Edit your digital images with a dreamy pastel look you only thought was possible on film!</p>
-                <a href="https://futc.gumroad.com/l/analogvibes2/panosplitter" class="cta-button" target="_blank">Get A Discount!</a>
-            </div>
-        </div>
-
-        <footer>
-            <div class="footer-content">
-                <p class="footer-info">Created by <a href="https://futc.de" target="_blank">FUTC</a> | All processing happens in your browser</p>
-                <div class="footer-links">
-                    <a href="https://instagram.com/futc.photography" target="_blank" class="social-link" aria-label="Follow us on Instagram">
-                        <img src="images/instagram-icon.svg" alt="Instagram" class="instagram-icon" width="18" height="18">
-                    </a>
-                    <a href="https://futc.de/impressum.html" target="_blank" class="legal-link">Impressum</a>
-                    <a href="https://futc.de/datenschutz.html" target="_blank" class="legal-link">Privacy Policy</a>
-                </div>
-            </div>
-        </footer>
+            </section>
+        </main>
     </div>
     <script src="script.js"></script>
 </body>
