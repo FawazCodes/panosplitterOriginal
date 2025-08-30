@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sliceCountText = document.getElementById('slice-count');
     const sliceResolutionText = document.getElementById('slice-resolution');
     const highResToggle = document.getElementById('high-res-toggle');
+    const aspectRatioSelect = document.getElementById('aspect-ratio');
     const processBtn = document.getElementById('process-btn');
     const resetBtn = document.getElementById('reset-btn');
     const resultContainer = document.getElementById('result-container');
@@ -92,16 +93,16 @@ document.addEventListener('DOMContentLoaded', () => {
         offsetY: 0
     };
     
-    // Standard Instagram 4:5 aspect ratio
-    const aspectRatio = 4/5; // width:height ratio
-    
+    // Aspect ratio (width:height)
+    let aspectRatio = 4 / 5;
+
     // Standard resolution (for standard mode)
     const standardWidth = 1080;
-    const standardHeight = Math.round(standardWidth / aspectRatio); // Should be 1350
+    function getStandardHeight() {
+        return Math.round(standardWidth / aspectRatio);
+    }
     
     const minSlices = 2;
-    const halfSliceWidth = standardWidth / 2;
-    
     // Show loading overlay with custom message
     function showLoading(message) {
         loadingText.textContent = message;
@@ -385,6 +386,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Aspect ratio change
+    aspectRatioSelect.addEventListener('change', () => {
+        aspectRatio = aspectRatioSelect.value === '3:4' ? 3 / 4 : 4 / 5;
+        if (originalImage) {
+            updateImageDetails();
+            resultContainer.style.display = 'none';
+            downloadBtn.disabled = true;
+        }
+    });
+
     navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             navButtons.forEach(b => b.classList.remove('active'));
@@ -637,28 +648,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateOptimalScaling(originalWidth, originalHeight, highResMode) {
         // Default to standard resolution
         let sliceWidth = standardWidth;
-        let sliceHeight = standardHeight;
-        
+        let sliceHeight = getStandardHeight();
+
         // For high-res mode: calculate the maximum possible slice size while maintaining aspect ratio
         if (highResMode) {
             // Calculate maximum height based on original image height
             sliceHeight = originalHeight;
-            // Calculate corresponding width based on 4:5 aspect ratio
+            // Calculate corresponding width based on selected aspect ratio
             sliceWidth = Math.round(sliceHeight * aspectRatio);
         }
-        
+
         // Initial scaling based on height
         const scaleFactor = sliceHeight / originalHeight;
         const baseScaledWidth = Math.round(originalWidth * scaleFactor);
-        
+
         // Calculate how many full slices we can get
         const fullSlices = Math.floor(baseScaledWidth / sliceWidth);
-        
+
         // Calculate the remaining width after using full slices
         const remainingWidth = baseScaledWidth - (fullSlices * sliceWidth);
-        
+
         let finalSliceCount, finalScaledWidth, finalScaledHeight;
-        
+
         // Ensure a minimum of 2 slices
         if (fullSlices < minSlices) {
             finalSliceCount = minSlices;
@@ -673,14 +684,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Adjust the scale factor to fit exactly the number of slices
             const adjustedScaleFactor = finalScaledWidth / originalWidth;
             finalScaledHeight = Math.round(originalHeight * adjustedScaleFactor);
-        } 
+        }
         // Otherwise use the original number of slices
         else {
             finalSliceCount = fullSlices;
             finalScaledWidth = finalSliceCount * sliceWidth;
             finalScaledHeight = sliceHeight;
         }
-        
+
         return {
             scaledWidth: finalScaledWidth,
             scaledHeight: finalScaledHeight,
@@ -931,6 +942,8 @@ document.addEventListener('DOMContentLoaded', () => {
         palette = [];
         lastSliceWidth = 0;
         lastSliceHeight = 0;
+        aspectRatioSelect.value = '4:5';
+        aspectRatio = 4 / 5;
         backgroundSettings = {
             mode: 'original',
             blur: 20,
@@ -1000,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = standardWidth;
-        canvas.height = standardHeight;
+        canvas.height = getStandardHeight();
 
         const stream = canvas.captureStream(fps);
         const mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm';
@@ -1095,13 +1108,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add a readme file explaining the full view
         const currentDate = new Date().toISOString().split('T')[0];
-        const readmeContent = 
+        const ratioLabel = aspectRatioSelect.value;
+        const readmeContent =
 `Instagram Panorama Slicer - Created by FUTC (@FUTC.Photography on Instagram)
 
 IF YOU LIKE THIS TOOL, PLEASE CONSIDER SUPPORTING ME BY CHECKING OUT MY LIGHTROOM PRESET PACKS (this link includes a heavy discount): https://futc.gumroad.com/l/analogvibes2/panosplitter
 
 This package contains:
-- slice_00_full_view.jpg: A complete view of your panorama that fits Instagram's 4:5 aspect ratio
+- slice_00_full_view.jpg: A complete view of your panorama that fits the ${ratioLabel} aspect ratio
 - slice_01.jpg to slice_${String(slicedImages.length).padStart(2, '0')}.jpg: Individual slices of your panorama
 
 For best results on Instagram:
