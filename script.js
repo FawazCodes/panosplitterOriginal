@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const uploadArea = document.getElementById('upload-area');
-    const fileInputLabel = document.querySelector('.file-input-label');
     const fileInput = document.getElementById('file-input');
     const errorMessage = document.getElementById('error-message');
     const dismissError = document.getElementById('dismiss-error');
@@ -22,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingText = document.getElementById('loading-text');
     const downloadBtnText = document.querySelector('.btn-text');
     const downloadBtnLoader = document.querySelector('.btn-loader');
-    const navButtons = document.querySelectorAll('#background-modes .mode-btn');
+    const navButtons = document.querySelectorAll('.mode-selector .mode-btn');
     const blurSlider = document.getElementById('blur-slider');
     const colorSwatches = document.getElementById('color-swatches');
     const colorPicker = document.getElementById('color-picker');
@@ -32,9 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const durationValue = document.getElementById('duration-value');
     const videoFps = document.getElementById('video-fps');
     const fpsValue = document.getElementById('fps-value');
-    const videoBitrate = document.getElementById('video-bitrate');
-    const bitrateValue = document.getElementById('bitrate-value');
-    const easingSelect = document.getElementById('video-easing');
     const directionButtons = document.querySelectorAll('#pan-direction .dir-btn');
     const formatButtons = document.querySelectorAll('#video-format .fmt-btn');
     const generateVideoBtn = document.getElementById('generate-video');
@@ -42,16 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const watermarkType = document.getElementById('wm-type');
     const wmTextInput = document.getElementById('wm-text');
     const wmFontSize = document.getElementById('wm-font-size');
-    const wmFontWeight = document.getElementById('wm-font-weight');
     const wmColor = document.getElementById('wm-color');
-    const wmStrokeColor = document.getElementById('wm-stroke-color');
-    const wmStrokeWidth = document.getElementById('wm-stroke-width');
     const wmImageInput = document.getElementById('wm-image');
     const wmOpacity = document.getElementById('wm-opacity');
     const wmOpacityValue = document.getElementById('wm-opacity-value');
     const wmPositionButtons = document.querySelectorAll('#wm-position-grid .pos-btn');
-    const wmOffsetX = document.getElementById('wm-offset-x');
-    const wmOffsetY = document.getElementById('wm-offset-y');
     const textWatermarkOptions = document.getElementById('text-watermark-options');
     const imageWatermarkOptions = document.getElementById('image-watermark-options');
 
@@ -82,15 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
         type: 'none',
         text: '',
         fontSize: 24,
-        fontWeight: 'normal',
         color: '#ffffff',
-        strokeColor: '#000000',
-        strokeWidth: 0,
         image: null,
         opacity: 1,
-        position: 'bottom-right',
-        offsetX: 0,
-        offsetY: 0
+        position: 'bottom-right'
     };
     
     // Aspect ratio (width:height)
@@ -115,17 +101,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Show button loading state
-    function showButtonLoading(button, textElement, loaderElement) {
+    function showButtonLoading(button) {
         button.disabled = true;
-        textElement.style.opacity = '0.7';
-        loaderElement.style.display = 'inline-block';
+        button.classList.add('loading');
     }
     
     // Hide button loading state
-    function hideButtonLoading(button, textElement, loaderElement) {
+    function hideButtonLoading(button) {
         button.disabled = false;
-        textElement.style.opacity = '1';
-        loaderElement.style.display = 'none';
+        button.classList.remove('loading');
     }
 
     function debounce(fn, delay = 16) {
@@ -212,18 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (watermarkSettings.type === 'text' && watermarkSettings.text) {
             ctx.save();
             ctx.globalAlpha = watermarkSettings.opacity;
-            ctx.font = `${watermarkSettings.fontWeight} ${watermarkSettings.fontSize}px Montserrat, sans-serif`;
+            ctx.font = `${watermarkSettings.fontSize}px Montserrat, sans-serif`;
             ctx.textBaseline = 'top';
             ctx.textAlign = 'left';
             const metrics = ctx.measureText(watermarkSettings.text);
             const wmWidth = metrics.width;
             const wmHeight = watermarkSettings.fontSize;
             const { x, y } = computeWatermarkPosition(wmWidth, wmHeight, width, height);
-            if (watermarkSettings.strokeWidth > 0) {
-                ctx.lineWidth = watermarkSettings.strokeWidth;
-                ctx.strokeStyle = watermarkSettings.strokeColor;
-                ctx.strokeText(watermarkSettings.text, x, y);
-            }
             ctx.fillStyle = watermarkSettings.color;
             ctx.fillText(watermarkSettings.text, x, y);
             ctx.restore();
@@ -272,8 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 y = canvasHeight - wmHeight;
                 break;
         }
-        x += watermarkSettings.offsetX;
-        y += watermarkSettings.offsetY;
         return { x, y };
     }
 
@@ -365,15 +342,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Download button
     downloadBtn.addEventListener('click', () => {
-        showButtonLoading(downloadBtn, downloadBtnText, downloadBtnLoader);
+        showButtonLoading(downloadBtn);
         
         // Use setTimeout to allow the UI to update before processing
         setTimeout(() => {
             downloadZip().then(() => {
-                hideButtonLoading(downloadBtn, downloadBtnText, downloadBtnLoader);
+                hideButtonLoading(downloadBtn);
             }).catch((error) => {
                 console.error('Error creating zip:', error);
-                hideButtonLoading(downloadBtn, downloadBtnText, downloadBtnLoader);
+                hideButtonLoading(downloadBtn);
                 showError('There was a problem creating your zip file. Please try again.');
             });
         }, 50);
@@ -528,12 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (videoBitrate) {
-        bitrateValue.textContent = videoBitrate.value;
-        videoBitrate.addEventListener('input', () => {
-            bitrateValue.textContent = videoBitrate.value;
-        });
-    }
+
 
     directionButtons.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -963,34 +935,26 @@ document.addEventListener('DOMContentLoaded', () => {
         previewImg.src = '';
     }
 
-    function getEasingFunction(type) {
-        const easings = {
-            'linear': t => t,
-            'ease-in-out': t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
-            'smooth': t => t * t * (3 - 2 * t),
-            'ease-out': t => 1 - Math.pow(1 - t, 2),
-        };
-        return easings[type] || easings['linear'];
-    }
 
-    function computePanPosition(t, dir, maxOffset, easing) {
+
+    function computePanPosition(t, dir, maxOffset) {
         if (maxOffset <= 0) return 0;
         switch (dir) {
             case 'ltr':
-                return -maxOffset * easing(t);
+                return -maxOffset * t;
             case 'rtl':
-                return -maxOffset * (1 - easing(t));
+                return -maxOffset * (1 - t);
             case 'lrl':
                 if (t < 0.5) {
-                    return -maxOffset * easing(t * 2);
+                    return -maxOffset * (t * 2);
                 } else {
-                    return -maxOffset * (1 - easing((t - 0.5) * 2));
+                    return -maxOffset * (1 - (t - 0.5) * 2);
                 }
             case 'rlr':
                 if (t < 0.5) {
-                    return -maxOffset * (1 - easing(t * 2));
+                    return -maxOffset * (1 - t * 2);
                 } else {
-                    return -maxOffset * easing((t - 0.5) * 2);
+                    return -maxOffset * ((t - 0.5) * 2);
                 }
             default:
                 return 0;
@@ -1006,8 +970,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const duration = Number(videoDuration.value);
         const fps = Number(videoFps.value);
-        const bitrate = Number(videoBitrate.value) * 1000000;
-        const easing = getEasingFunction(easingSelect.value);
         const format = outputFormat;
 
         const canvas = document.createElement('canvas');
@@ -1026,7 +988,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         let recorder;
         try {
-            recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate });
+            recorder = new MediaRecorder(stream, { mimeType });
         } catch (e) {
             stream.getTracks().forEach(t => t.stop());
             hideLoading();
@@ -1052,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
             link.href = currentVideoUrl;
             link.download = `pan_video.${format}`;
             link.textContent = 'Download Video';
-            link.className = 'secondary-btn';
+            link.className = 'btn btn-secondary';
             videoResult.appendChild(link);
             stream.getTracks().forEach(t => t.stop());
             hideLoading();
@@ -1070,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function drawFrame() {
             const t = frame / (totalFrames - 1);
-            const x = computePanPosition(t, panDirection, maxOffset, easing);
+            const x = computePanPosition(t, panDirection, maxOffset);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(originalImage.element || originalImage, x, 0, scaledWidth, canvas.height);
             drawWatermark(ctx, canvas.width, canvas.height);
