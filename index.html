@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; script-src 'self' https://umami.dev.futc.de; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob: https://umami.dev.futc.de; object-src 'none'; base-uri 'self'; form-action 'self'; child-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests;">
-    <title>inSplitter</title>
+    <title>PanoSplitter</title>
     <link rel="icon" type="image/png" href="images/favicon.png"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="js/jszip.min.js"></script>
     <script src="js/FileSaver.min.js"></script>
@@ -16,352 +16,237 @@
 </head>
 <body>
     <div class="app">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <div class="logo-icon">📸</div>
-                    <h1>inSplitter</h1>
-                </div>
-                <button id="reset-btn" class="btn btn-secondary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M3 21v-5h5"/>
-                    </svg>
-                    New Image
-                </button>
+        <section class="preview-panel">
+            <header class="topbar">
+                <h1 class="logo">PanoSplitter</h1>
+                <button id="reset-btn" class="secondary-btn">New Image</button>
+            </header>
+
+            <div id="error-message" class="toast">
+                <p>Please upload a panorama image with a horizontal aspect ratio (width &gt; height).</p>
+                <button id="dismiss-error" class="secondary-btn">Dismiss</button>
             </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="main">
-            <!-- Bento Grid Layout -->
-            <div class="bento-grid">
-                <!-- Upload Area - Large Card -->
-                <div class="bento-card upload-card" id="upload-area">
-                    <div class="upload-content">
-                        <div class="upload-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="7,10 12,15 17,10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                        </div>
-                        <h2>Drop your panorama here</h2>
-                        <p>or</p>
-                        <label for="file-input" class="btn btn-primary">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                                <polyline points="14,2 14,8 20,8"/>
-                            </svg>
-                            Select File
-                        </label>
-                        <input type="file" id="file-input" accept="image/*" hidden>
-                        <p class="upload-hint">Supports: JPG, PNG, WEBP</p>
-                    </div>
+            <div class="upload-area" id="upload-area">
+                <div class="upload-inner">
+                    <img src="images/upload-icon.svg" alt="Upload" width="48" height="48">
+                    <h3>Drop your panorama image here</h3>
+                    <p>or</p>
+                    <label for="file-input" class="file-input-label">Select File</label>
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                    <p class="support-text">Supports: JPG, PNG, WEBP</p>
                 </div>
+            </div>
 
-                <!-- Preview Card -->
-                <div class="bento-card preview-card" id="preview-container">
-                    <div class="card-header">
-                        <h3>Preview</h3>
-                        <div class="card-actions">
-                            <button id="process-btn" class="btn btn-primary" disabled>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                                </svg>
-                                Generate Slices
-                            </button>
-                        </div>
+            <div class="preview-container" id="preview-container">
+                <h2>Preview</h2>
+                <div class="preview-wrapper">
+                    <div class="image-preview">
+                        <img id="preview-img" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Image preview">
                     </div>
-                    <div class="preview-content">
-                        <div class="image-preview">
-                            <img id="preview-img" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Image preview">
-                        </div>
-                        <div class="preview-info">
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <span class="info-label">Original Size</span>
-                                    <span class="info-value" id="original-size">-</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Scaled Size</span>
-                                    <span class="info-value" id="scaled-size">-</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Slices</span>
-                                    <span class="info-value" id="slice-count">-</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Resolution</span>
-                                    <span class="info-value" id="slice-resolution">-</span>
-                                </div>
+                    <div class="preview-info">
+                        <div class="info-card">
+                            <h3>Image Details</h3>
+                            <div id="image-details">
+                                <p>Original Size: <span id="original-size"></span></p>
+                                <p>Scaled Size: <span id="scaled-size"></span></p>
+                                <p>Number of Slices: <span id="slice-count"></span></p>
+                                <p>Slice Resolution: <span id="slice-resolution"></span></p>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Settings Card -->
-                <div class="bento-card settings-card">
-                    <div class="card-header">
-                        <h3>Settings</h3>
-                    </div>
-                    <div class="settings-content">
-                        <div class="setting-group">
-                            <label class="setting-label">Aspect Ratio</label>
-                            <select id="aspect-ratio" class="select">
-                                <option value="4:5" selected>4:5 (Instagram Portrait)</option>
-                                <option value="3:4">3:4 (Classic Portrait)</option>
-                            </select>
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label class="setting-label">Quality</label>
-                            <div class="toggle-group">
-                                <input type="checkbox" id="high-res-toggle" checked>
-                                <label for="high-res-toggle" class="toggle">
-                                    <span class="toggle-slider"></span>
-                                    <span class="toggle-label">High Resolution Mode</span>
-                                </label>
-                            </div>
-                            <p class="setting-hint">Uses maximum possible resolution from your image</p>
-                        </div>
-                    </div>
+            <div class="result-container" id="result-container">
+                <h2>Your Results</h2>
+                <div class="slices-preview" id="slices-preview"></div>
+                <div class="download-section">
+                    <button id="download-btn" class="primary-btn" disabled>
+                        <span class="btn-text">Download ZIP</span>
+                        <span class="btn-loader"></span>
+                    </button>
                 </div>
+            </div>
 
-                <!-- Background Card -->
-                <div class="bento-card background-card">
-                    <div class="card-header">
-                        <h3>Background</h3>
+            <div id="video-result" class="video-result"></div>
+        </section>
+
+        <aside class="control-panel">
+            <details open class="panel-section" id="slicer-settings">
+                <summary>Slicer Settings</summary>
+                <div class="section-content">
+                    <p class="section-desc">Configure how your image is sliced.</p>
+                    <div class="setting">
+                        <label for="aspect-ratio">Aspect Ratio</label>
+                        <select id="aspect-ratio">
+                            <option value="4:5" selected>4:5</option>
+                            <option value="3:4">3:4</option>
+                        </select>
                     </div>
-                    <div class="background-content">
-                        <div class="mode-selector">
-                            <button class="mode-btn active" data-mode="original">Original</button>
-                            <button class="mode-btn" data-mode="blur">Blur</button>
-                            <button class="mode-btn" data-mode="solid">Solid</button>
-                            <button class="mode-btn" data-mode="gradient">Gradient</button>
-                        </div>
-                        
-                        <div id="background-options" class="background-options">
-                            <div id="blur-options" class="bg-option">
-                                <label class="setting-label">Blur Radius</label>
-                                <input type="range" id="blur-slider" min="0" max="50" value="20" class="slider">
-                            </div>
-                            
-                            <div id="solid-options" class="bg-option">
-                                <label class="setting-label">Color</label>
-                                <div id="color-swatches" class="color-swatches"></div>
-                                <input type="color" id="color-picker" value="#ffffff" class="color-input">
-                            </div>
-                            
-                            <div id="gradient-options" class="bg-option">
-                                <div class="setting-row">
-                                    <div class="setting-group">
-                                        <label class="setting-label">Type</label>
-                                        <select id="gradient-type" class="select">
-                                            <option value="linear">Linear</option>
-                                            <option value="radial">Radial</option>
-                                        </select>
-                                    </div>
-                                    <div class="setting-group">
-                                        <label class="setting-label">Angle</label>
-                                        <input type="number" id="gradient-angle" value="0" min="0" max="360" class="input">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="high-res-toggle" checked>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">High Resolution Mode</span>
+                    </label>
+                    <p class="toggle-description">Uses maximum possible resolution from your image</p>
+                    <button id="process-btn" class="primary-btn full-width" disabled>Generate Slices</button>
                 </div>
+            </details>
 
-                <!-- Watermark Card -->
-                <div class="bento-card watermark-card">
-                    <div class="card-header">
-                        <h3>Watermark</h3>
+            <details class="panel-section" id="background-settings">
+                <summary>Background</summary>
+                <div class="section-content">
+                    <div id="background-modes" class="mode-buttons">
+                        <button class="mode-btn active" data-mode="original">Original</button>
+                        <button class="mode-btn" data-mode="blur">Blur</button>
+                        <button class="mode-btn" data-mode="solid">Solid</button>
+                        <button class="mode-btn" data-mode="gradient">Gradient</button>
                     </div>
-                    <div class="watermark-content">
-                        <div class="setting-group">
-                            <label class="setting-label">Type</label>
-                            <select id="wm-type" class="select">
-                                <option value="none">None</option>
-                                <option value="text">Text</option>
-                                <option value="image">Image</option>
-                            </select>
+                    <div id="background-options" class="background-options">
+                        <div id="blur-options" class="bg-option">
+                            <label for="blur-slider">Blur radius</label>
+                            <input type="range" id="blur-slider" min="0" max="50" value="20">
                         </div>
-                        
-                        <div id="text-watermark-options" class="wm-option">
-                            <div class="setting-row">
-                                <div class="setting-group">
-                                    <label class="setting-label">Text</label>
-                                    <input type="text" id="wm-text" placeholder="Watermark text" class="input">
-                                </div>
-                                <div class="setting-group">
-                                    <label class="setting-label">Font Size</label>
-                                    <input type="number" id="wm-font-size" value="24" min="1" class="input">
-                                </div>
-                            </div>
-                            
-                            <div class="setting-row">
-                                <div class="setting-group">
-                                    <label class="setting-label">Color</label>
-                                    <input type="color" id="wm-color" value="#ffffff" class="color-input">
-                                </div>
-                                <div class="setting-group">
-                                    <label class="setting-label">Stroke</label>
-                                    <input type="color" id="wm-stroke-color" value="#000000" class="color-input">
-                                </div>
-                            </div>
-                            
-                            <div class="setting-group">
-                                <label class="setting-label">Stroke Width</label>
-                                <input type="range" id="wm-stroke-width" min="0" max="10" value="0" class="slider">
-                            </div>
+                        <div id="solid-options" class="bg-option">
+                            <div id="color-swatches" class="color-swatches"></div>
+                            <input type="color" id="color-picker" value="#ffffff">
                         </div>
-                        
-                        <div id="image-watermark-options" class="wm-option">
-                            <div class="setting-group">
-                                <label class="setting-label">Image</label>
-                                <input type="file" id="wm-image" accept="image/*" class="file-input">
-                            </div>
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label class="setting-label">Opacity</label>
-                            <input type="range" id="wm-opacity" min="0" max="100" value="100" class="slider">
-                            <span class="slider-value" id="wm-opacity-value">100%</span>
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label class="setting-label">Position</label>
-                            <div id="wm-position-grid" class="position-grid">
-                                <button type="button" class="pos-btn" data-pos="top-left"></button>
-                                <button type="button" class="pos-btn" data-pos="top-center"></button>
-                                <button type="button" class="pos-btn" data-pos="top-right"></button>
-                                <button type="button" class="pos-btn" data-pos="middle-left"></button>
-                                <button type="button" class="pos-btn" data-pos="center"></button>
-                                <button type="button" class="pos-btn" data-pos="middle-right"></button>
-                                <button type="button" class="pos-btn" data-pos="bottom-left"></button>
-                                <button type="button" class="pos-btn" data-pos="bottom-center"></button>
-                                <button type="button" class="pos-btn active" data-pos="bottom-right"></button>
-                            </div>
-                        </div>
-                        
-                        <div class="setting-row">
-                            <div class="setting-group">
-                                <label class="setting-label">Offset X</label>
-                                <input type="number" id="wm-offset-x" value="0" class="input">
-                            </div>
-                            <div class="setting-group">
-                                <label class="setting-label">Offset Y</label>
-                                <input type="number" id="wm-offset-y" value="0" class="input">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Video Maker Card -->
-                <div class="bento-card video-card">
-                    <div class="card-header">
-                        <h3>Pan Video Maker</h3>
-                    </div>
-                    <div class="video-content">
-                        <div class="setting-row">
-                            <div class="setting-group">
-                                <label class="setting-label">Duration</label>
-                                <input type="range" id="video-duration" min="5" max="180" value="15" class="slider">
-                                <span class="slider-value" id="duration-value">15s</span>
-                            </div>
-                            <div class="setting-group">
-                                <label class="setting-label">FPS</label>
-                                <input type="range" id="video-fps" min="30" max="120" step="30" value="30" class="slider">
-                                <span class="slider-value" id="fps-value">30</span>
-                            </div>
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label class="setting-label">Bitrate</label>
-                            <input type="range" id="video-bitrate" min="25" max="100" step="5" value="25" class="slider">
-                            <span class="slider-value" id="bitrate-value">25 Mbps</span>
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label class="setting-label">Easing</label>
-                            <select id="video-easing" class="select">
+                        <div id="gradient-options" class="bg-option">
+                            <label for="gradient-type">Type</label>
+                            <select id="gradient-type">
                                 <option value="linear">Linear</option>
-                                <option value="ease-in-out">Ease In Out</option>
-                                <option value="smooth">Smooth</option>
-                                <option value="ease-out">Ease Out</option>
+                                <option value="radial">Radial</option>
+                            </select>
+                            <label for="gradient-angle">Angle</label>
+                            <input type="number" id="gradient-angle" value="0" min="0" max="360">
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="panel-section" id="watermark-maker">
+                <summary>Watermark</summary>
+                <div class="section-content">
+                    <div class="setting">
+                        <label for="wm-type">Type</label>
+                        <select id="wm-type">
+                            <option value="none">None</option>
+                            <option value="text">Text</option>
+                            <option value="image">Image</option>
+                        </select>
+                    </div>
+                    <div id="text-watermark-options" class="wm-option">
+                        <div class="setting">
+                            <label for="wm-text">Content</label>
+                            <input type="text" id="wm-text" placeholder="Watermark text">
+                        </div>
+                        <div class="setting">
+                            <label for="wm-font-size">Font Size</label>
+                            <input type="number" id="wm-font-size" value="24" min="1">
+                        </div>
+                        <div class="setting">
+                            <label for="wm-font-weight">Font Weight</label>
+                            <select id="wm-font-weight">
+                                <option value="normal">Normal</option>
+                                <option value="bold">Bold</option>
+                                <option value="bolder">Bolder</option>
                             </select>
                         </div>
-                        
-                        <div class="setting-group">
-                            <label class="setting-label">Direction</label>
-                            <div id="pan-direction" class="direction-grid">
-                                <button type="button" class="dir-btn active" data-dir="ltr">L→R</button>
-                                <button type="button" class="dir-btn" data-dir="rtl">R→L</button>
-                                <button type="button" class="dir-btn" data-dir="lrl">L→R→L</button>
-                                <button type="button" class="dir-btn" data-dir="rlr">R→L→R</button>
-                            </div>
+                        <div class="setting">
+                            <label for="wm-color">Color</label>
+                            <input type="color" id="wm-color" value="#ffffff">
                         </div>
-                        
-                        <div class="setting-group">
-                            <label class="setting-label">Format</label>
-                            <div id="video-format" class="format-grid">
-                                <button type="button" class="fmt-btn active" data-format="mp4">MP4</button>
-                                <button type="button" class="fmt-btn" data-format="webm">WebM</button>
-                            </div>
+                        <div class="setting">
+                            <label for="wm-stroke-color">Stroke Color</label>
+                            <input type="color" id="wm-stroke-color" value="#000000">
                         </div>
-                        
-                        <button id="generate-video" class="btn btn-primary full-width" disabled>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="5,3 19,12 5,21 5,3"/>
-                            </svg>
-                            Generate Video
-                        </button>
+                        <div class="setting">
+                            <label for="wm-stroke-width">Stroke Width</label>
+                            <input type="number" id="wm-stroke-width" value="0" min="0">
+                        </div>
+                    </div>
+                    <div id="image-watermark-options" class="wm-option">
+                        <div class="setting">
+                            <label for="wm-image">Watermark Image</label>
+                            <input type="file" id="wm-image" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="setting">
+                        <label for="wm-opacity">Opacity <span id="wm-opacity-value">100%</span></label>
+                        <input type="range" id="wm-opacity" min="0" max="100" value="100">
+                    </div>
+                    <div class="setting">
+                        <label>Position</label>
+                        <div id="wm-position-grid" class="position-grid">
+                            <button type="button" class="pos-btn" data-pos="top-left"></button>
+                            <button type="button" class="pos-btn" data-pos="top-center"></button>
+                            <button type="button" class="pos-btn" data-pos="top-right"></button>
+                            <button type="button" class="pos-btn" data-pos="middle-left"></button>
+                            <button type="button" class="pos-btn" data-pos="center"></button>
+                            <button type="button" class="pos-btn" data-pos="middle-right"></button>
+                            <button type="button" class="pos-btn" data-pos="bottom-left"></button>
+                            <button type="button" class="pos-btn" data-pos="bottom-center"></button>
+                            <button type="button" class="pos-btn active" data-pos="bottom-right"></button>
+                        </div>
+                    </div>
+                    <div class="setting">
+                        <label for="wm-offset-x">Offset X</label>
+                        <input type="number" id="wm-offset-x" value="0">
+                        <label for="wm-offset-y">Offset Y</label>
+                        <input type="number" id="wm-offset-y" value="0">
                     </div>
                 </div>
+            </details>
 
-                <!-- Results Card -->
-                <div class="bento-card results-card" id="result-container">
-                    <div class="card-header">
-                        <h3>Results</h3>
+            <details class="panel-section" id="video-maker">
+                <summary>Pan Video Maker</summary>
+                <div class="section-content">
+                    <div class="setting">
+                        <label for="video-duration">Duration <span id="duration-value">15s</span></label>
+                        <input type="range" id="video-duration" min="5" max="180" value="15">
                     </div>
-                    <div class="results-content">
-                        <div class="slices-preview" id="slices-preview"></div>
-                        <div class="download-section">
-                            <button id="download-btn" class="btn btn-primary full-width" disabled>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                    <polyline points="7,10 12,15 17,10"/>
-                                    <line x1="12" y1="15" x2="12" y2="3"/>
-                                </svg>
-                                Download ZIP
-                            </button>
+                    <div class="setting">
+                        <label for="video-fps">FPS <span id="fps-value">30</span></label>
+                        <input type="range" id="video-fps" min="30" max="120" step="30" value="30">
+                    </div>
+                    <div class="setting">
+                        <label for="video-bitrate">Bitrate <span id="bitrate-value">25</span> Mbps</label>
+                        <input type="range" id="video-bitrate" min="25" max="100" step="5" value="25">
+                    </div>
+                    <div class="setting">
+                        <label for="video-easing">Animation Easing</label>
+                        <select id="video-easing">
+                            <option value="linear">linear</option>
+                            <option value="ease-in-out">ease-in-out</option>
+                            <option value="smooth">smooth</option>
+                            <option value="ease-out">ease-out</option>
+                        </select>
+                    </div>
+                    <div class="setting">
+                        <label>Pan Direction</label>
+                        <div id="pan-direction" class="pan-grid">
+                            <button type="button" class="dir-btn active" data-dir="ltr">L to R</button>
+                            <button type="button" class="dir-btn" data-dir="rtl">R to L</button>
+                            <button type="button" class="dir-btn" data-dir="lrl">L-R-L</button>
+                            <button type="button" class="dir-btn" data-dir="rlr">R-L-R</button>
                         </div>
                     </div>
+                    <div class="setting">
+                        <label>Format</label>
+                        <div id="video-format" class="format-select">
+                            <button type="button" class="fmt-btn active" data-format="mp4">MP4</button>
+                            <button type="button" class="fmt-btn" data-format="webm">WebM</button>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button id="generate-video" class="primary-btn full-width" disabled>Generate Video</button>
+                    </div>
                 </div>
-
-                <!-- Video Result Card -->
-                <div class="bento-card video-result-card" id="video-result"></div>
-            </div>
-        </main>
+            </details>
+        </aside>
     </div>
 
-    <!-- Error Toast -->
-    <div id="error-message" class="toast">
-        <div class="toast-content">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <p>Please upload a panorama image with a horizontal aspect ratio (width > height).</p>
-            <button id="dismiss-error" class="btn btn-ghost">Dismiss</button>
-        </div>
-    </div>
-
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay">
         <div class="loading-content">
             <div class="spinner"></div>
