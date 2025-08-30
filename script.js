@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingText = document.getElementById('loading-text');
     const downloadBtnText = document.querySelector('.btn-text');
     const downloadBtnLoader = document.querySelector('.btn-loader');
-    const navButtons = document.querySelectorAll('#background-modes .nav-btn');
+    const navButtons = document.querySelectorAll('#background-modes .mode-btn');
     const blurSlider = document.getElementById('blur-slider');
     const colorSwatches = document.getElementById('color-swatches');
     const colorPicker = document.getElementById('color-picker');
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Dismiss error
     dismissError.addEventListener('click', () => {
-        errorMessage.style.display = 'none';
+        errorMessage.classList.remove('active');
     });
     
     // Download button
@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 previewImg.src = e.target.result;
 
                 // Hide error if shown
-                errorMessage.style.display = 'none';
+                errorMessage.classList.remove('active');
 
                 // Show preview container
                 uploadArea.style.display = 'none';
@@ -683,8 +683,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function showError(message) {
         const errorText = errorMessage.querySelector('p');
         errorText.textContent = message;
-        errorMessage.style.display = 'block';
-        
+        errorMessage.classList.add('active');
+
         // Scroll to error
         errorMessage.scrollIntoView({ behavior: 'smooth' });
     }
@@ -904,7 +904,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide preview and results
         previewContainer.style.display = 'none';
         resultContainer.style.display = 'none';
-        errorMessage.style.display = 'none';
+        errorMessage.classList.remove('active');
         
         // Show upload area
         uploadArea.style.display = 'block';
