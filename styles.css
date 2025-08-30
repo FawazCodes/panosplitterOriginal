@@ -783,3 +783,76 @@ footer {
         justify-content: space-between;
     }
 }
+
+/* Pan Video Maker styles */
+.video-maker {
+    margin-top: 40px;
+}
+
+.video-maker details {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.video-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.video-settings {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.video-settings .setting label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.video-settings input[type="range"] {
+    width: 100%;
+}
+
+.pan-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.dir-btn,
+.fmt-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.dir-btn.active,
+.fmt-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--white);
+}
+
+.format-select {
+    display: flex;
+    gap: 8px;
+}
+
+.video-result video {
+    margin-top: 20px;
+    width: 100%;
+    max-height: 500px;
+}
