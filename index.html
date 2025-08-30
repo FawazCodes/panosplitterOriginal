@@ -23,7 +23,7 @@
             </header>
 
             <div id="error-message" class="toast">
-                <p>Please upload a panorama image with a horizontal aspect ratio (width > height).</p>
+                <p>Please upload a panorama image with a horizontal aspect ratio (width &gt; height).</p>
                 <button id="dismiss-error" class="secondary-btn">Dismiss</button>
             </div>
 
@@ -42,7 +42,7 @@
                 <h2>Preview</h2>
                 <div class="preview-wrapper">
                     <div class="image-preview">
-                        <img id="preview-img" src="" alt="Image preview">
+                        <img id="preview-img" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Image preview">
                     </div>
                     <div class="preview-info">
                         <div class="info-card">
@@ -62,7 +62,7 @@
                 <h2>Your Results</h2>
                 <div class="slices-preview" id="slices-preview"></div>
                 <div class="download-section">
-                    <button id="download-btn" class="primary-btn">
+                    <button id="download-btn" class="primary-btn" disabled>
                         <span class="btn-text">Download ZIP</span>
                         <span class="btn-loader"></span>
                     </button>
@@ -83,7 +83,7 @@
                         <span class="toggle-label">High Resolution Mode</span>
                     </label>
                     <p class="toggle-description">Uses maximum possible resolution from your image</p>
-                    <button id="process-btn" class="primary-btn full-width">Generate Slices</button>
+                    <button id="process-btn" class="primary-btn full-width" disabled>Generate Slices</button>
                 </div>
             </details>
 
@@ -233,7 +233,7 @@
                         </div>
                     </div>
                     <div class="actions">
-                        <button id="generate-video" class="primary-btn full-width">Generate Video</button>
+                        <button id="generate-video" class="primary-btn full-width" disabled>Generate Video</button>
                     </div>
                 </div>
             </details>

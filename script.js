@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatButtons = document.querySelectorAll('#video-format .fmt-btn');
     const generateVideoBtn = document.getElementById('generate-video');
     const videoResult = document.getElementById('video-result');
-    const watermarkType = document.getElementById('watermark-type');
+    const watermarkType = document.getElementById('wm-type');
     const wmTextInput = document.getElementById('wm-text');
     const wmFontSize = document.getElementById('wm-font-size');
     const wmFontWeight = document.getElementById('wm-font-weight');
@@ -53,6 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const wmOffsetY = document.getElementById('wm-offset-y');
     const textWatermarkOptions = document.getElementById('text-watermark-options');
     const imageWatermarkOptions = document.getElementById('image-watermark-options');
+
+    // Disable actions until a valid image is loaded
+    processBtn.disabled = true;
+    downloadBtn.disabled = true;
+    if (generateVideoBtn) generateVideoBtn.disabled = true;
     
     // Variables to store image data
     let originalImage = null;
@@ -578,6 +583,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     colorPicker.value = backgroundSettings.color;
                 }
 
+                // Enable processing now that a valid image is loaded
+                processBtn.disabled = false;
+                downloadBtn.disabled = true;
+                if (generateVideoBtn) generateVideoBtn.disabled = false;
+
                 // Update image details
                 updateImageDetails();
 
@@ -890,6 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         resultContainer.style.display = 'block';
+        downloadBtn.disabled = false;
         window.scrollTo({
             top: resultContainer.offsetTop - 20,
             behavior: 'smooth'
@@ -905,9 +916,12 @@ document.addEventListener('DOMContentLoaded', () => {
         previewContainer.style.display = 'none';
         resultContainer.style.display = 'none';
         errorMessage.classList.remove('active');
-        
+
         // Show upload area
         uploadArea.style.display = 'block';
+        processBtn.disabled = true;
+        downloadBtn.disabled = true;
+        if (generateVideoBtn) generateVideoBtn.disabled = true;
         
         // Clear image data
         originalImage = null;
