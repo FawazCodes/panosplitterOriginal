@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastSliceHeight = 0;
     let panDirection = 'ltr';
     let outputFormat = 'mp4';
+    let currentVideoUrl = null;
     let watermarkSettings = {
         type: 'none',
         text: '',
@@ -1003,13 +1004,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const stream = canvas.captureStream(fps);
         const mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm';
+        if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported(mimeType)) {
+            stream.getTracks().forEach(t => t.stop());
+            hideLoading();
+            if (generateVideoBtn) generateVideoBtn.disabled = false;
+            alert('Video format not supported in this browser.');
+            return;
+        }
         let recorder;
         try {
             recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate });
         } catch (e) {
+            stream.getTracks().forEach(t => t.stop());
             hideLoading();
             if (generateVideoBtn) generateVideoBtn.disabled = false;
-            alert('Video format not supported in this browser.');
+            alert('Unable to start video recording.');
             return;
         }
 
@@ -1017,18 +1026,22 @@ document.addEventListener('DOMContentLoaded', () => {
         recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = () => {
             const blob = new Blob(chunks, { type: mimeType });
-            const url = URL.createObjectURL(blob);
+            if (currentVideoUrl) {
+                URL.revokeObjectURL(currentVideoUrl);
+            }
+            currentVideoUrl = URL.createObjectURL(blob);
             videoResult.innerHTML = '';
             const video = document.createElement('video');
             video.controls = true;
-            video.src = url;
+            video.src = currentVideoUrl;
             videoResult.appendChild(video);
             const link = document.createElement('a');
-            link.href = url;
+            link.href = currentVideoUrl;
             link.download = `pan_video.${format}`;
             link.textContent = 'Download Video';
             link.className = 'secondary-btn';
             videoResult.appendChild(link);
+            stream.getTracks().forEach(t => t.stop());
             hideLoading();
             if (generateVideoBtn) generateVideoBtn.disabled = false;
         };
