@@ -125,6 +125,85 @@
                     </div>
                 </div>
 
+                <!-- Watermark Settings -->
+                <div class="watermark-maker" id="watermark-maker">
+                    <details>
+                        <summary class="watermark-summary">
+                            <span>Watermark</span>
+                        </summary>
+                        <div class="watermark-settings">
+                            <div class="setting">
+                                <label for="watermark-type">Type</label>
+                                <select id="watermark-type">
+                                    <option value="none">None</option>
+                                    <option value="text">Text</option>
+                                    <option value="image">Image</option>
+                                </select>
+                            </div>
+                            <div id="text-watermark-options" class="wm-option">
+                                <div class="setting">
+                                    <label for="wm-text">Content</label>
+                                    <input type="text" id="wm-text" placeholder="Watermark text">
+                                </div>
+                                <div class="setting">
+                                    <label for="wm-font-size">Font Size</label>
+                                    <input type="number" id="wm-font-size" value="24" min="1">
+                                </div>
+                                <div class="setting">
+                                    <label for="wm-font-weight">Font Weight</label>
+                                    <select id="wm-font-weight">
+                                        <option value="normal">Normal</option>
+                                        <option value="bold">Bold</option>
+                                        <option value="bolder">Bolder</option>
+                                    </select>
+                                </div>
+                                <div class="setting">
+                                    <label for="wm-color">Color</label>
+                                    <input type="color" id="wm-color" value="#ffffff">
+                                </div>
+                                <div class="setting">
+                                    <label for="wm-stroke-color">Stroke Color</label>
+                                    <input type="color" id="wm-stroke-color" value="#000000">
+                                </div>
+                                <div class="setting">
+                                    <label for="wm-stroke-width">Stroke Width</label>
+                                    <input type="number" id="wm-stroke-width" value="0" min="0">
+                                </div>
+                            </div>
+                            <div id="image-watermark-options" class="wm-option">
+                                <div class="setting">
+                                    <label for="wm-image">Watermark Image</label>
+                                    <input type="file" id="wm-image" accept="image/*">
+                                </div>
+                            </div>
+                            <div class="setting">
+                                <label for="wm-opacity">Opacity <span id="wm-opacity-value">100%</span></label>
+                                <input type="range" id="wm-opacity" min="0" max="100" value="100">
+                            </div>
+                            <div class="setting">
+                                <label>Position</label>
+                                <div id="wm-position-grid" class="position-grid">
+                                    <button type="button" class="pos-btn" data-pos="top-left"></button>
+                                    <button type="button" class="pos-btn" data-pos="top-center"></button>
+                                    <button type="button" class="pos-btn" data-pos="top-right"></button>
+                                    <button type="button" class="pos-btn" data-pos="middle-left"></button>
+                                    <button type="button" class="pos-btn" data-pos="center"></button>
+                                    <button type="button" class="pos-btn" data-pos="middle-right"></button>
+                                    <button type="button" class="pos-btn" data-pos="bottom-left"></button>
+                                    <button type="button" class="pos-btn" data-pos="bottom-center"></button>
+                                    <button type="button" class="pos-btn active" data-pos="bottom-right"></button>
+                                </div>
+                            </div>
+                            <div class="setting">
+                                <label for="wm-offset-x">Offset X</label>
+                                <input type="number" id="wm-offset-x" value="0">
+                                <label for="wm-offset-y">Offset Y</label>
+                                <input type="number" id="wm-offset-y" value="0">
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
                 <!-- Pan Video Maker -->
                 <div class="video-maker" id="video-maker">
                     <details>
