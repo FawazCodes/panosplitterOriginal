@@ -972,6 +972,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function generatePanVideo() {
         if (!originalImage) return;
 
+        // Provide feedback while rendering the video
+        showLoading('Generating video...');
+        if (generateVideoBtn) generateVideoBtn.disabled = true;
+
         const duration = Number(videoDuration.value);
         const fps = Number(videoFps.value);
         const bitrate = Number(videoBitrate.value) * 1000000;
@@ -989,6 +993,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate });
         } catch (e) {
+            hideLoading();
+            if (generateVideoBtn) generateVideoBtn.disabled = false;
             alert('Video format not supported in this browser.');
             return;
         }
@@ -1009,6 +1015,8 @@ document.addEventListener('DOMContentLoaded', () => {
             link.textContent = 'Download Video';
             link.className = 'secondary-btn';
             videoResult.appendChild(link);
+            hideLoading();
+            if (generateVideoBtn) generateVideoBtn.disabled = false;
         };
 
         const scale = canvas.height / originalImage.height;
