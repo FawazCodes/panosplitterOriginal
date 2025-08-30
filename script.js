@@ -20,9 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadBtn = document.getElementById('download-btn');
     const loadingOverlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
-    const downloadBtnText = document.querySelector('.btn-text');
-    const downloadBtnLoader = document.querySelector('.btn-loader');
-    const navButtons = document.querySelectorAll('#background-modes .mode-btn');
+
+    const navButtons = document.querySelectorAll('.mode-selector .mode-btn');
     const blurSlider = document.getElementById('blur-slider');
     const colorSwatches = document.getElementById('color-swatches');
     const colorPicker = document.getElementById('color-picker');
@@ -115,17 +114,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Show button loading state
-    function showButtonLoading(button, textElement, loaderElement) {
+    function showButtonLoading(button) {
         button.disabled = true;
-        textElement.style.opacity = '0.7';
-        loaderElement.style.display = 'inline-block';
+        button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Processing...';
     }
     
     // Hide button loading state
-    function hideButtonLoading(button, textElement, loaderElement) {
+    function hideButtonLoading(button, originalText) {
         button.disabled = false;
-        textElement.style.opacity = '1';
-        loaderElement.style.display = 'none';
+        button.innerHTML = originalText;
     }
 
     function debounce(fn, delay = 16) {
@@ -365,15 +362,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Download button
     downloadBtn.addEventListener('click', () => {
-        showButtonLoading(downloadBtn, downloadBtnText, downloadBtnLoader);
+        const originalText = downloadBtn.innerHTML;
+        showButtonLoading(downloadBtn);
         
         // Use setTimeout to allow the UI to update before processing
         setTimeout(() => {
             downloadZip().then(() => {
-                hideButtonLoading(downloadBtn, downloadBtnText, downloadBtnLoader);
+                hideButtonLoading(downloadBtn, originalText);
             }).catch((error) => {
                 console.error('Error creating zip:', error);
-                hideButtonLoading(downloadBtn, downloadBtnText, downloadBtnLoader);
+                hideButtonLoading(downloadBtn, originalText);
                 showError('There was a problem creating your zip file. Please try again.');
             });
         }, 50);
@@ -1052,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
             link.href = currentVideoUrl;
             link.download = `pan_video.${format}`;
             link.textContent = 'Download Video';
-            link.className = 'secondary-btn';
+            link.className = 'btn btn-secondary';
             videoResult.appendChild(link);
             stream.getTracks().forEach(t => t.stop());
             hideLoading();
